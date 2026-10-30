@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RPG-Tracker | Find Your Next RPG</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --panel-soft: #1f2937;
+        --card: #0b1220;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --accent: #7c3aed;
+        --accent-2: #22c55e;
+        --border: rgba(255,255,255,0.1);
+        --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(180deg, #020817 0%, #0f172a 100%);
+        color: var(--text);
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 20px 60px;
+      }
+
+      .hero {
+        background: rgba(17, 24, 39, 0.9);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 24px 26px;
+        box-shadow: var(--shadow);
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(2.1rem, 3vw, 3.2rem);
+      }
+
+      .subtitle {
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: 1.02rem;
+      }
+
+      .version-switcher {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .version-button {
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        border-radius: 999px;
+        padding: 10px 18px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .version-button.active {
+        background: linear-gradient(135deg, var(--accent), #4f46e5);
+        border-color: transparent;
+      }
+
+      .survey-panel {
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        padding: 24px;
+      }
+
+      .survey {
+        display: none;
+      }
+
+      .survey.active {
+        display: block;
+      }
+
+      .question {
+        margin-bottom: 22px;
+        padding: 18px 18px 14px;
+        background: rgba(31, 41, 55, 0.75);
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.06);
+      }
+
+      .question p {
+        margin: 0 0 12px;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
+
+      .answers {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+      }
+
+      label.option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255,255,255,0.06);
+        cursor: pointer;
+      }
+
+      label.option input {
+        accent-color: var(--accent);
+      }
+
+      .actions {
+        margin-top: 18px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .primary-btn {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 18px;
+        background: linear-gradient(135deg, var(--accent-2), #0ea5e9);
+        color: #08111d;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .results {
+        margin-top: 26px;
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        padding: 22px 20px;
+      }
+
+      .results h2 {
+        margin-top: 0;
+      }
+
+      .result-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+      }
+
+      .result-card {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(17, 24, 39, 0.95));
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      .result-card h3 {
+        margin: 0 0 8px;
+        font-size: 1.25rem;
+      }
+
+      .meta {
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin-bottom: 8px;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(124, 58, 237, 0.15);
+        border: 1px solid rgba(124, 58, 237, 0.4);
+        color: #d7c8ff;
+        font-size: 0.8rem;
+        margin-right: 8px;
+        margin-top: 8px;
+      }
+
+      .empty-state {
+        color: var(--muted);
+        margin: 0;
+      }
+
+      @media (max-width: 640px) {
+        .page { padding: 20px 14px 40px; }
+        .survey-panel, .results, .hero { padding: 18px 16px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <h1>RPG-Tracker</h1>
+        <p class="subtitle">Answer a few quick questions and find a role-playing game that fits your taste.</p>
+        <div class="version-switcher">
+          <button class="version-button active" data-version="short">Short</button>
+          <button class="version-button" data-version="medium">Medium</button>
+          <button class="version-button" data-version="long">Long</button>
+        </div>
+      </header>
+
+      <main class="survey-panel">
+        <section class="survey active" id="survey-short">
+          <form id="form-short">
+            <div class="question">
+              <p>What platform do you prefer to play on?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="platform" value="PC" checked /> PC</label>
+                <label class="option"><input type="radio" name="platform" value="Nintendo" /> Nintendo</label>
+                <label class="option"><input type="radio" name="platform" value="PlayStation" /> PlayStation</label>
+                <label class="option"><input type="radio" name="platform" value="Xbox" /> Xbox</label>
+                <label class="option"><input type="radio" name="platform" value="Mobile" /> Mobile</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>Which world vibe do you want?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="setting" value="Fantasy" checked /> Fantasy</label>
+                <label class="option"><input type="radio" name="setting" value="Sci-Fi" /> Sci-Fi</label>
+                <label class="option"><input type="radio" name="setting" value="Historical" /> Historical</label>
+                <label class="option"><input type="radio" name="setting" value="Dark" /> Dark / grim</label>
+                <label class="option"><input type="radio" name="setting" value="Modern" /> Modern / contemporary</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>How do you want combat and progression to feel?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="style" value="turn-based" checked /> Turn-based and tactical</label>
+                <label class="option"><input type="radio" name="style" value="story" /> Story-heavy and character-driven</label>
+                <label class="option"><input type="radio" name="style" value="action" /> Action-oriented and fast</label>
+                <label class="option"><input type="radio" name="style" value="exploration" /> Exploration and discovery</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>Do you prefer a classic or recent RPG?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="era" value="classic" checked /> Classic / older titles</label>
+                <label class="option"><input type="radio" name="era" value="modern" /> Modern / newer releases</label>
+                <label class="option"><input type="radio" name="era" value="mixed" /> Either is fine</label>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="primary-btn">Find my game</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="survey" id="survey-medium">
+          <form id="form-medium">
+            <div class="question">
+              <p>Preferred platform?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="platform" value="PC" checked /> PC</label>
+                <label class="option"><input type="radio" name="platform" value="Nintendo" /> Nintendo</label>
+                <label class="option"><input type="radio" name="platform" value="PlayStation" /> PlayStation</label>
+                <label class="option"><input type="radio" name="platform" value="Xbox" /> Xbox</label>
+                <label class="option"><input type="radio" name="platform" value="Mobile" /> Mobile</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>What setting is most appealing?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="setting" value="Fantasy" checked /> Fantasy</label>
+                <label class="option"><input type="radio" name="setting" value="Sci-Fi" /> Sci-Fi</label>
+                <label class="option"><input type="radio" name="setting" value="Historical" /> Historical</label>
+                <label class="option"><input type="radio" name="setting" value="Dark" /> Dark fantasy / grim</label>
+                <label class="option"><input type="radio" name="setting" value="Contemporary" /> Contemporary</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>How much emphasis on exploration?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="exploration" value="high" checked /> Lots of exploration</label>
+                <label class="option"><input type="radio" name="exploration" value="medium" /> Balanced</label>
+                <label class="option"><input type="radio" name="exploration" value="low" /> Combat and story first</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>Which gameplay feel matches you best?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="style" value="turn-based" checked /> Turn-based / tactical</label>
+                <label class="option"><input type="radio" name="style" value="story" /> Storytelling / character growth</label>
+                <label class="option"><input type="radio" name="style" value="action" /> Action-heavy</label>
+                <label class="option"><input type="radio" name="style" value="strategy" /> Strategy and planning</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>What kind of story tone do you want?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="tone" value="epic" checked /> Epic and hopeful</label>
+                <label class="option"><input type="radio" name="tone" value="grim" /> Dark and moody</label>
+                <label class="option"><input type="radio" name="tone" value="mystical" /> Mystical and adventurous</label>
+                <label class="option"><input type="radio" name="tone" value="serious" /> Serious and grounded</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>What era do you want to explore?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="era" value="classic" checked /> Older classic RPGs</label>
+                <label class="option"><input type="radio" name="era" value="modern" /> Newer RPGs</label>
+                <label class="option"><input type="radio" name="era" value="mixed" /> No preference</label>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="primary-btn">Recommend my next RPG</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="survey" id="survey-long">
+          <form id="form-long">
+            <div class="question">
+              <p>Where do you usually play?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="platform" value="PC" checked /> PC</label>
+                <label class="option"><input type="radio" name="platform" value="Nintendo" /> Nintendo</label>
+                <label class="option"><input type="radio" name="platform" value="PlayStation" /> PlayStation</label>
+                <label class="option"><input type="radio" name="platform" value="Xbox" /> Xbox</label>
+                <label class="option"><input type="radio" name="platform" value="Mobile" /> Mobile</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>Which setting feels most exciting right now?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="setting" value="Fantasy" checked /> Fantasy</label>
+                <label class="option"><input type="radio" name="setting" value="Sci-Fi" /> Sci-Fi</label>
+                <label class="option"><input type="radio" name="setting" value="Historical" /> Historical</label>
+                <label class="option"><input type="radio" name="setting" value="Dark" /> Dark / grim</label>
+                <label class="option"><input type="radio" name="setting" value="Modern" /> Modern / urban</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>Do you prefer a more tactical battle system?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="style" value="turn-based" checked /> Yes, turn-based tactical</label>
+                <label class="option"><input type="radio" name="style" value="story" /> No, I want story and character development</label>
+                <label class="option"><input type="radio" name="style" value="action" /> I like action-heavy combat</label>
+                <label class="option"><input type="radio" name="style" value="strategy" /> I like strategy and planning</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>How much of the adventure should be exploration versus story?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="exploration" value="high" checked /> Exploration first</label>
+                <label class="option"><input type="radio" name="exploration" value="medium" /> Balance both</label>
+                <label class="option"><input type="radio" name="exploration" value="low" /> Story first</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>What mood do you want from the experience?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="tone" value="epic" checked /> Epic and uplifting</label>
+                <label class="option"><input type="radio" name="tone" value="grim" /> Dark and serious</label>
+                <label class="option"><input type="radio" name="tone" value="mystical" /> Mystical and adventurous</label>
+                <label class="option"><input type="radio" name="tone" value="serious" /> Serious and grounded</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>How much complexity are you in the mood for?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="complexity" value="deep" checked /> Deep systems and lots of depth</label>
+                <label class="option"><input type="radio" name="complexity" value="balanced" /> Balanced and approachable</label>
+                <label class="option"><input type="radio" name="complexity" value="simple" /> Simple and smooth</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>Do you care more about the world or the characters?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="focus" value="world" checked /> The world and lore</label>
+                <label class="option"><input type="radio" name="focus" value="party" /> The party and character growth</label>
+                <label class="option"><input type="radio" name="focus" value="story" /> The story and writing</label>
+              </div>
+            </div>
+
+            <div class="question">
+              <p>Do you prefer a classic RPG release or a newer one?</p>
+              <div class="answers">
+                <label class="option"><input type="radio" name="era" value="classic" checked /> Classic / older</label>
+                <label class="option"><input type="radio" name="era" value="modern" /> Modern / new</label>
+                <label class="option"><input type="radio" name="era" value="mixed" /> Either is fine</label>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="primary-btn">Match me with an RPG</button>
+            </div>
+          </form>
+        </section>
+      </main>
+
+      <section class="results" aria-live="polite">
+        <h2>Recommended matches</h2>
+        <div id="result-list" class="result-list">
+          <p class="empty-state">Choose a questionnaire and submit to see your top RPG picks.</p>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const versionButtons = document.querySelectorAll('.version-button');
+      const surveys = document.querySelectorAll('.survey');
+      const resultList = document.getElementById('result-list');
+      let allGames = [];
+
+      versionButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const version = button.dataset.version;
+          versionButtons.forEach((btn) => btn.classList.toggle('active', btn === button));
+          surveys.forEach((survey) => {
+            survey.classList.toggle('active', survey.id === `survey-${version}`);
+          });
+        });
+      });
+
+      function normalizeText(value) {
+        return String(value || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, ' ')
+          .trim();
+      }
+
+      function toTitleCase(text) {
+        return String(text || '')
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+      }
+
+      function matchCertainText(candidateText, targetText) {
+        if (!candidateText || !targetText) return false;
+        const normalizedCandidate = normalizeText(candidateText);
+        const normalizedTarget = normalizeText(targetText);
+        return normalizedCandidate.includes(normalizedTarget) || normalizedTarget.includes(normalizedCandidate);
+      }
+
+      function inferTags(game) {
+        const tags = new Set();
+        if (game.setting) tags.add(normalizeText(game.setting));
+        if (Array.isArray(game.platforms)) {
+          game.platforms.forEach((platform) => tags.add(normalizeText(platform)));
+        }
+        if (Array.isArray(game.subgenres)) {
+          game.subgenres.forEach((subgenre) => tags.add(normalizeText(subgenre)));
+        }
+        if (game.title) tags.add(normalizeText(game.title));
+        const title = String(game.title || '');
+        if (/dragon|fantasy|magic|kingdom|quest/i.test(title)) tags.add('fantasy');
+        if (/space|sci|galaxy|futur|star/i.test(title)) tags.add('space');
+        return Array.from(tags);
+      }
+
+      function getPlatformMatchScore(game, platformAnswer) {
+        if (!platformAnswer || platformAnswer === 'Any') return 0;
+        const gamePlatforms = (game.platforms || []).map(normalizeText);
+        const answer = normalizeText(platformAnswer);
+        if (gamePlatforms.some((platform) => platform.includes(answer) || answer.includes(platform))) {
+          return 90;
+        }
+        if (answer === 'pc' && gamePlatforms.some((platform) => /windows|linux|pc|computer|dos/.test(platform))) return 60;
+        if (answer === 'nintendo' && gamePlatforms.some((platform) => /nintendo|switch|gamecube|ds|3ds|nes|snes|wii|game boy/.test(platform))) return 60;
+        if (answer === 'playstation' && gamePlatforms.some((platform) => /playstation|ps1|ps2|ps3|ps4|ps5|vita/.test(platform))) return 60;
+        if (answer === 'xbox' && gamePlatforms.some((platform) => /xbox|xb|xbox one|xbox series/.test(platform))) return 60;
+        if (answer === 'mobile' && gamePlatforms.some((platform) => /mobile|android|ios|phone|tablet/.test(platform))) return 60;
+        return 0;
+      }
+
+      function getSettingMatchScore(game, settingAnswer) {
+        if (!settingAnswer) return 0;
+        const answer = normalizeText(settingAnswer);
+        const setting = normalizeText(game.setting || '');
+        const tags = inferTags(game);
+        if (setting.includes(answer) || answer.includes(setting)) return 90;
+        if (answer === 'dark' && (setting.includes('dark') || /grim|dark|shadow|apocalypse/.test(String(game.setting || '')))) return 70;
+        if (answer === 'fantasy' && tags.some((tag) => /fantasy|magic|myth|dragon|kingdom|realm/.test(tag))) return 70;
+        if (answer === 'sci-fi' && tags.some((tag) => /sci|space|future|galaxy|cyber/.test(tag))) return 70;
+        if (answer === 'historical' && /historical|medieval|ancient|war|empire|samurai|roman/.test(String(game.setting || ''))) return 70;
+        if (answer === 'modern' && /modern|contemporary|urban|present|future/.test(String(game.setting || ''))) return 70;
+        return 0;
+      }
+
+      function getStyleMatchScore(game, styleAnswer) {
+        if (!styleAnswer) return 0;
+        const tags = (game.subgenres || []).map(normalizeText).join(' ');
+        const setting = normalizeText(game.setting || '');
+        const answer = normalizeText(styleAnswer);
+
+        if (answer === 'turn-based' && /turn|tactical|strategy|grid|party/.test(tags)) return 80;
+        if (answer === 'story' && (/story|narrative|character|plot/.test(tags) || /fantasy|sci-fi/.test(setting))) return 70;
+        if (answer === 'action' && /action|real time|hack/.test(tags)) return 80;
+        if (answer === 'strategy' && /strategy|tactical|turn/.test(tags)) return 75;
+        if (answer === 'exploration' && /exploration|open world|adventure/.test(tags)) return 70;
+        return 0;
+      }
+
+      function getEraMatchScore(game, eraAnswer) {
+        if (!eraAnswer) return 0;
+        const year = Number(game.release_year || 0);
+        if (eraAnswer === 'classic') return year < 2006 ? 35 : 0;
+        if (eraAnswer === 'modern') return year >= 2006 ? 35 : 0;
+        if (eraAnswer === 'mixed') return 10;
+        return 0;
+      }
+
+      function getExplorationMatchScore(game, answer) {
+        if (!answer) return 0;
+        const tags = (game.subgenres || []).map(normalizeText).join(' ');
+        if (answer === 'high' && /open world|exploration|adventure|sandbox/.test(tags)) return 50;
+        if (answer === 'medium' && /adventure|exploration|open/.test(tags)) return 30;
+        if (answer === 'low' && /story|narrative|linear|quest/.test(tags)) return 35;
+        return 0;
+      }
+
+      function getToneMatchScore(game, toneAnswer) {
+        if (!toneAnswer) return 0;
+        const text = `${game.title || ''} ${game.setting || ''} ${(game.subgenres || []).join(' ')}`.toLowerCase();
+        if (toneAnswer === 'epic' && /epic|hero|kingdom|legend|adventure/.test(text)) return 25;
+        if (toneAnswer === 'grim' && /dark|grim|shadow|apocalypse|demon|vampire/.test(text)) return 25;
+        if (toneAnswer === 'mystical' && /magic|myth|mystic|ancient|fantasy/.test(text)) return 25;
+        if (toneAnswer === 'serious' && /serious|grounded|historical|military|political/.test(text)) return 25;
+        return 0;
+      }
+
+      function scoreGame(game, answers) {
+        let score = 0;
+        score += getPlatformMatchScore(game, answers.platform);
+        score += getSettingMatchScore(game, answers.setting);
+        score += getStyleMatchScore(game, answers.style);
+        score += getEraMatchScore(game, answers.era);
+        score += getExplorationMatchScore(game, answers.exploration);
+        score += getToneMatchScore(game, answers.tone);
+
+        if (answers.focus === 'world' && /world|lore|history|exploration/.test(String((game.subgenres || []).join(' ') + ' ' + (game.setting || '')))) score += 15;
+        if (answers.focus === 'story' && /story|narrative|character/.test(String((game.subgenres || []).join(' ') + ' ' + (game.setting || '')))) score += 15;
+        if (answers.focus === 'party' && /party|character|companions/.test(String((game.subgenres || []).join(' ') + ' ' + (game.setting || '')))) score += 15;
+
+        if (answers.complexity === 'deep' && Number(game.release_year || 0) >= 2000) score += 10;
+        if (answers.complexity === 'balanced' && Number(game.release_year || 0) >= 1998 && Number(game.release_year || 0) <= 2015) score += 12;
+        if (answers.complexity === 'simple' && Number(game.release_year || 0) >= 2010) score += 8;
+
+        return score;
+      }
+
+      function renderResults(matches) {
+        if (!matches.length) {
+          resultList.innerHTML = '<p class="empty-state">No strong matches were found. Try adjusting your answers or choosing a different questionnaire.</p>';
+          return;
+        }
+
+        resultList.innerHTML = matches.map((match, index) => {
+          const platforms = (match.game.platforms || []).slice(0, 3).join(', ') || 'Unknown';
+          const subgenres = (match.game.subgenres || []).slice(0, 2).join(', ') || 'RPG';
+          const badgeText = index === 0 ? 'Best Match' : index === 1 ? 'Strong Pick' : 'Good Option';
+          return `
+            <article class="result-card">
+              <span class="badge">${badgeText}</span>
+              <h3>${match.game.title || 'Untitled game'}</h3>
+              <div class="meta">${match.game.release_year || 'Year unknown'} • ${platforms}</div>
+              <div class="meta">${match.game.setting || 'Setting unavailable'} • ${subgenres}</div>
+              <div class="meta">Why it matches: ${match.reason}</div>
+            </article>
+          `;
+        }).join('');
+      }
+
+      function createReason(game, answers) {
+        const reasons = [];
+        if (answers.platform) reasons.push(`popular on ${answers.platform}`);
+        if (answers.setting) reasons.push(`fits a ${answers.setting.toLowerCase()} setting`);
+        if (answers.style) reasons.push(`matches a ${answers.style.toLowerCase()} combat style`);
+        if (answers.era) reasons.push(`lines up with ${answers.era.toLowerCase()}-era RPG preferences`);
+        return reasons.slice(0, 2).join(' and ') || 'matches your RPG preferences';
+      }
+
+      function findTopMatches(formData) {
+        const answers = Object.fromEntries(new FormData(formData).entries());
+        const scored = allGames
+          .filter((game) => game && game.title)
+          .map((game) => {
+            const score = scoreGame(game, answers);
+            return { game, score, reason: createReason(game, answers) };
+          })
+          .filter((entry) => entry.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3);
+
+        if (!scored.length) {
+          return allGames
+            .filter((game) => game && game.title)
+            .slice(0, 3)
+            .map((game) => ({ game, score: 1, reason: 'broad RPG recommendation' }));
+        }
+
+        return scored;
+      }
+
+      document.querySelectorAll('form').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (!allGames.length) {
+            resultList.innerHTML = '<p class="empty-state">The RPG dataset is still loading. Please try again in a moment.</p>';
+            return;
+          }
+
+          const matches = findTopMatches(form);
+          renderResults(matches);
+        });
+      });
+
+      fetch('./role_playing_video_games.json')
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Dataset could not be loaded.');
+          }
+          return response.json();
+        })
+        .then((data) => {
+          allGames = Array.isArray(data.entries) ? data.entries : [];
+          if (!allGames.length) {
+            resultList.innerHTML = '<p class="empty-state">The RPG dataset is empty. Please check the JSON file.</p>';
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          resultList.innerHTML = '<p class="empty-state">Unable to load the RPG dataset from the repository. Check that the JSON file is in the project root.</p>';
+        });
+    </script>
+  </body>
+</html>
